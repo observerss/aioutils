@@ -5,7 +5,7 @@ import sys
 
 from setuptools import setup
 
-from aiohttp import __version__
+from aiopool import __version__
 
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
@@ -28,12 +28,12 @@ setup(
     packages=['aiopool'],
     license='Apache 2.0',
     zip_safe=True,
-    classifiers=(
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'Natural Language :: English',
-        'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4'
-        ),
+    # classifiers=(
+        # 'Development Status :: 5 - Production/Stable',
+        # 'Intended Audience :: Developers',
+        # 'Natural Language :: English',
+        # 'License :: OSI Approved :: Apache Software License',
+        # 'Programming Language :: Python :: 3',
+        # 'Programming Language :: Python :: 3.4'
+        # ),
     )
