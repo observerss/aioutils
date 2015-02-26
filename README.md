@@ -1,8 +1,75 @@
-## Gevent Group and Pool alike in Python3 Asyncio
+# Python3 Asyncio Utils
 
-Python3 Asyncio implements an event loop, but in quite low level, it's missing some basic helpers that can make our life a lot easier.
+## Intro
 
-The Group and Pool primitives in gevent are typical missing ones. Compare these codes below
+Python3 Asyncio implements an event loop, but in quite low level, it misses some basic helpers that can make our life a lot easier.
+
+
+This package enhances `asyncio.wait` and `asyncio.as_completed`, provides more user friendly interfaces through the following primitives.
+
+- `Group`: a `gevent.pool.Group` alike object, allows you to spawn coroutines and join them later
+- `Pool`: a `gevent.poo.Pool` alike object, allows setting concurrency level
+- `Bag`: a helper to write generator with coroutines
+- `OrderedBag`: a helper to write generator with coroutines, and keep yielding order the same as spawning order
+
+
+## QuickStart
+
+```py
+import random
+import asyncio
+from aioutils import Pool, Group, Bag, OrderedBag
+
+@asyncio.coroutine
+def f(c):
+	yield from asyncio.sleep(random.random()/10)
+
+chars = 'abcdefg'
+		
+# Group Usage
+g = Group()
+for c in chars:
+	g.spawn(f(c))
+g.join()
+
+# Pool Usage
+p = Pool(2)
+for c in chars:
+	p.spawn(f(c))
+p.join()
+
+# Bag Usage
+def gen_func():
+	b = Bag()
+	
+	@asyncio.coroutine
+	def f2(c):
+		yield from asyncio.sleep(random.random()/10)
+		b.put(c)
+		
+	def schedule():
+		for c in chars:
+			b.spawn(f2(c))
+	
+	b.schedule(schedule)
+	yield from b.yielder()
+			
+# OrderedBag, Bag with yielding order == spawning order
+```
+
+## Testing
+
+Install nosetests and run the following
+
+```py
+PYTHONPATH=. nosetests tests/
+```
+
+## Rationale
+
+The Group and Pool are quite useful in complex asynchronous situations. 
+
+Compare these codes below
 
 ### Simple Loop
 
@@ -160,3 +227,5 @@ p.join()
 ```
 
 Looks same like `Group`, but ensures that no more than 10 tasks in the same `Pool` can be executed simultaneously.
+
+

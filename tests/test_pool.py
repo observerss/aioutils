@@ -3,7 +3,7 @@
 import time
 import asyncio
 
-from aiopool import Group, Pool
+from aioutils import Group, Pool
 
 def test_group():
     timespan = 0.1
