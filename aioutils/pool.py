@@ -51,10 +51,7 @@ class Group(object):
 
     def join(self):
         def _on_waiter(f):
-            all_tasks = asyncio.Task.all_tasks()
-            # only when no other tasks executing, we can stop event loop
-            if not all_tasks:
-                asyncio.base_events._raise_stop_error()
+            self.loop.stop()
             self._prepare()
 
         self.task_waiter.add_done_callback(_on_waiter)
