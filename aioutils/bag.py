@@ -10,12 +10,14 @@ import threading
 
 from .pool import Group
 
+
 class Bag(object):
+
     """ Create generator function with coroutines
 
     A Bag is just a Group, a queue, and a background thread running event loop.
-    Coroutines are spawned in a schedule method, and enqueues result to the main
-    queue, main thread then yield items from main queue.
+    Coroutines are spawned in a schedule method, and enqueues result to the
+    queue, main thread then yield items from queue.
 
     Usage::
 
@@ -36,6 +38,7 @@ class Bag(object):
         b.schedule(schedule)
         yield from b.yielder()
     """
+
     def __init__(self, group=None):
         if group is not None:
             self.g = group
@@ -72,7 +75,9 @@ class Bag(object):
 
 
 class OrderedBag(Bag):
+
     """ A Bag that ensures ordering """
+
     def __init__(self, *args):
         super(OrderedBag, self).__init__(*args)
         self.q = queue.PriorityQueue()
@@ -80,6 +85,7 @@ class OrderedBag(Bag):
 
     def spawn(self, coro):
         self.order += 1
+
         def _coro_wrapper(order):
             yield from coro
         return self.g.spawn(functools.partial(_coro_wrapper, self.order)())
@@ -110,26 +116,3 @@ class OrderedBag(Bag):
                     yield item
             except IndexError:
                 time.sleep(0.1)
-
-def test_bag():
-    pass
-
-def test_orderedbag():
-    import random
-    def g():
-        b = OrderedBag()
-        @asyncio.coroutine
-        def f(c):
-            yield from asyncio.sleep(random.random()/10)
-            b.put(c)
-        def schedule():
-            for c in 'abcdefg':
-                b.spawn(f(c))
-            b.join()
-        b.schedule(schedule)
-        yield from b.yielder()
-    for c in g():
-        print(c)
-
-if __name__ == '__main__':
-    test_orderedbag()
