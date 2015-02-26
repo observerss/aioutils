@@ -50,8 +50,17 @@ class Group(object):
                 self.task_waiter.set_result(None)
 
     def join(self):
-        self.loop.run_until_complete(self.task_waiter)
-        self._prepare()
+        def _on_waiter(f):
+            all_tasks = asyncio.Task.all_tasks()
+            # only when no other tasks executing, we can stop event loop
+            if not all_tasks:
+                asyncio.base_events._raise_stop_error()
+            self._prepare()
+
+        self.task_waiter.add_done_callback(_on_waiter)
+
+        if not self.loop._running:
+            self.loop.run_forever()
 
 
 class Pool(Group):
