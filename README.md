@@ -1,6 +1,6 @@
 # Python3 Asyncio Utils
 
-## Intro
+## Introduction
 
 Python3 Asyncio implements an event loop, but in quite low level, it misses some basic helpers that can make our life a lot easier.
 
@@ -50,6 +50,7 @@ def gen_func():
 	def schedule():
 		for c in chars:
 			b.spawn(f2(c))
+        b.join()
 	
 	b.schedule(schedule)
 	yield from b.yielder()
