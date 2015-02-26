@@ -108,11 +108,10 @@ class OrderedBag(Bag):
                 # peek item, the smallest of heap
                 order, item = self.q.queue[0]
                 if order != next_order:
-                    time.sleep(0.1)
+                    time.sleep(0.03)
                 else:
                     order, item = self.q.get_nowait()
-                    assert order == next_order
                     next_order += 1
                     yield item
             except IndexError:
-                time.sleep(0.1)
+                time.sleep(0.03)

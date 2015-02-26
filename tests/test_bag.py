@@ -4,7 +4,7 @@ import random
 import inspect
 import asyncio
 
-from aioutils import Bag, OrderedBag
+from aioutils import Bag, OrderedBag, Group
 
 def test_bag():
     chars = 'abcdefg'
@@ -30,10 +30,10 @@ def test_bag():
 def test_orderedbag():
     chars = 'abcdefg'
     def g():
-        b = OrderedBag()
+        b = OrderedBag(Group())
         @asyncio.coroutine
         def f(c):
-            yield from asyncio.sleep(random.random()/10)
+            yield from asyncio.sleep(random.random()*0.1)
             b.put(c)
         def schedule():
             for c in chars:
@@ -44,8 +44,10 @@ def test_orderedbag():
 
     chars2 = g()
     assert inspect.isgenerator(chars2)
+    chars2 = list(chars2)
     for c1, c2 in zip(chars, chars2):
         assert c1 == c2
+
 
 if __name__ == '__main__':
     test_bag()

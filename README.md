@@ -60,9 +60,13 @@ def gen_func():
 
 ## Testing
 
-Install nosetests and run the following
+Install nosetests, coverage, then run the following
 
-```py
+```bash
+make test
+
+# or
+
 PYTHONPATH=. nosetests tests/
 ```
 
