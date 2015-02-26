@@ -1,5 +1,11 @@
 ## History
 
+### 2015.02.28
+
+0.2.1 release
+
+- fix thread unsafe problem
+
 ### 2015.02.26
 
 0.2.0 release
