@@ -2,6 +2,10 @@
 
 ### 2015.02.27
 
+0.3.2 release
+
+- typo fix
+
 0.3.1 release
 
 - add put method for manually yield items
