@@ -6,6 +6,11 @@ import inspect
 import asyncio
 from aioutils import Yielder, OrderedYielder, yielding, ordered_yielding
 
+@asyncio.coroutine
+def f(c):
+    yield from asyncio.sleep(random.random()*.1)
+    return c
+
 def test_yielder():
     def gen_func():
         y = Yielder()
@@ -44,11 +49,6 @@ def test_ordered_yielder():
 
     def gen_func():
         y = OrderedYielder()
-        @asyncio.coroutine
-        def f(c):
-            yield from asyncio.sleep(random.random()*0.1)
-            return c
-
         for c in chars[:3]:
             y.spawn(f(c))
 
@@ -69,12 +69,6 @@ def test_ordered_yielder():
 
 def test_yielding():
     chars = 'abcdefg'
-
-    @asyncio.coroutine
-    def f(c):
-        yield from asyncio.sleep(random.random()*0.1)
-        return c
-
     def gen_func():
         with yielding() as y:
             for c in chars:
@@ -97,7 +91,20 @@ def test_yielding():
     assert ''.join(list(gen_func2())) == chars
 
 
+def test_yielder_with_pool_size():
+    chars = 'abcdefgh'
+    def gen_func():
+        with yielding(2) as y:
+            for c in chars:
+                y.spawn(f(c))
+            yield from y
+
+    # I don't know how to assert correctness, >.<
+    assert set(gen_func())  == set(chars)
+
+
 if __name__ == '__main__':
     test_yielder()
     test_ordered_yielder()
     test_yielding()
+    test_yielder_with_pool_size()

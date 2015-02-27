@@ -1,5 +1,12 @@
 ## History
 
+### 2015.02.28
+
+0.3.3 release
+
+- fixed Pool's potential thread unsafe problem
+- add pool size argument to yielder family
+
 ### 2015.02.27
 
 0.3.2 release

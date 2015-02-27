@@ -17,16 +17,28 @@ class Yielder(object):
     Each time when an item is put, we stop the main loop(!!) and yield
     """
 
-    def __init__(self):
+    def __init__(self, pool_size=None):
+        self.sem = asyncio.Semaphore(pool_size) if pool_size else None
         self.loop = asyncio.get_event_loop()
         self.counter = 0
         self.done = collections.deque()
         self.getters = collections.deque()
 
     def spawn(self, coro):
-        task = asyncio.async(coro)
+        task = self._async_task(coro)
         task.add_done_callback(self._on_completion)
         self.counter += 1
+        return task
+
+    def _async_task(self, coro):
+        if self.sem:
+            @asyncio.coroutine
+            def _limit_coro():
+                with (yield from self._safe_yield_from(self.sem)):
+                    return (yield from self._safe_yield_from(coro))
+            task = asyncio.async(_limit_coro())
+        else:
+            task = asyncio.async(coro)
         return task
 
     def _on_completion(self, f):
@@ -53,12 +65,13 @@ class Yielder(object):
         """ use a loop to ensure loop running when we need to yield """
         while True:
             try:
-                yield from waiter
+                x = yield from waiter
             except:
                 if not self.loop._running:
                     self.loop.run_forever()
             else:
                 break
+        return x
 
     def _yielding(self):
         while self.counter > 0 or self.done:
@@ -78,15 +91,15 @@ class Yielder(object):
 
 
 class OrderedYielder(Yielder):
-    def __init__(self):
-        super(OrderedYielder, self).__init__()
+    def __init__(self, pool_size=None):
+        super(OrderedYielder, self).__init__(pool_size)
         self.done = []
         self.order = 0
         self.yield_counter = 0
 
     def spawn(self, coro):
         self.order += 1
-        task = asyncio.async(coro)
+        task = self._async_task(coro)
         task.add_done_callback(
             functools.partial(self._on_completion, order=self.order))
         self.counter += 1
@@ -130,11 +143,11 @@ class OrderedYielder(Yielder):
 
 
 class YieldingContext(object):
-    def __init__(self, ordered=False):
+    def __init__(self, pool_size=None, ordered=False):
         if ordered:
-            self.y = OrderedYielder()
+            self.y = OrderedYielder(pool_size)
         else:
-            self.y = Yielder()
+            self.y = Yielder(pool_size)
         self.yielding = None
 
     def spawn(self, coro):

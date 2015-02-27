@@ -68,13 +68,25 @@ class Pool(Group):
         self.sem = asyncio.Semaphore(pool_size, loop=loop)
         super(Pool, self).__init__(loop)
 
+    def _safe_yield_from(self, waiter):
+        """ use a loop to ensure loop running when we need to yield """
+        while True:
+            try:
+                x = yield from waiter
+            except:
+                if not self.loop._running:
+                    self.loop.run_forever()
+            else:
+                break
+        return x
+
     def spawn(self, coro):
         assert asyncio.iscoroutine(coro), 'pool only accepts coroutine'
 
         @asyncio.coroutine
         def _limit_coro():
-            with (yield from self.sem):
-                yield from coro
+            with (yield from self._safe_yield_from(self.sem)):
+                return (yield from self._safe_yield_from(coro))
 
         self.counter += 1
         task = asyncio.async(_limit_coro())
