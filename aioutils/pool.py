@@ -56,8 +56,10 @@ class Group(object):
 
         self.task_waiter.add_done_callback(_on_waiter)
 
-        if not self.loop._running:
-            self.loop.run_forever()
+        # expect the loops to be stop and start multiple times
+        while self.counter > 0:
+            if not self.loop._running:
+                self.loop.run_forever()
 
 
 class Pool(Group):

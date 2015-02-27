@@ -2,27 +2,36 @@
 
 ## Introduction
 
-Python3 Asyncio implements an event loop, but in quite low level, it misses some basic helpers that can make our life a lot easier.
+Python3 Asyncio implements an event loop, but 
 
+- it is in quite low level, it misses some advanced primitives
+- it can only write sync code wrapped in async code helper (`run_in_executer`), not the other way around
 
-This package enhances `asyncio.wait` and `asyncio.as_completed`, provides more user friendly interfaces through the following primitives.
+If you try to use asyncio the basic way, you must write all your code in an async way, but that's a pain for many applications. I feel must better to write critical part in async mode while remain transparent to others sync codes.
+
+To achieve this, here is package I wrote that provides the following primitives.
 
 - `Group`: a `gevent.pool.Group` alike object, allows you to spawn coroutines and join them later
 - `Pool`: a `gevent.poo.Pool` alike object, allows setting concurrency level
-- `Bag`: a helper to write generator with coroutines
-- `OrderedBag`: a helper to write generator with coroutines, and keep yielding order the same as spawning order
+- `Yielder`: a helper to write generator with coroutines
+- `OrderedYielder`: a helper to write generator with coroutines, and keep yielding order the same as spawning order
 
 
 ## QuickStart
 
+Simple Group, You might find that there is no explicit event loops, it looks just like threading or gevent. 
+
+Under the hood, a event loop is started and wait until all tasks in Group joins then stopped (to return sync value)
+
 ```py
 import random
 import asyncio
-from aioutils import Pool, Group, Bag, OrderedBag
+from aioutils import Pool, Group, Yielder, OrderedYielder
 
 @asyncio.coroutine
 def f(c):
 	yield from asyncio.sleep(random.random()/10)
+	return c
 
 chars = 'abcdefg'
 		
@@ -37,26 +46,34 @@ p = Pool(2)
 for c in chars:
 	p.spawn(f(c))
 p.join()
-
-# Bag Usage
-def gen_func():
-	b = Bag()
-	
-	@asyncio.coroutine
-	def f2(c):
-		yield from asyncio.sleep(random.random()/10)
-		b.put(c)
-		
-	def schedule():
-		for c in chars:
-			b.spawn(f2(c))
-        b.join()
-	
-	b.schedule(schedule)
-	yield from b.yielder()
-			
-# OrderedBag, Bag with yielding order == spawning order
 ```
+
+And if you need the return values, use `Yielder`
+
+```py
+def gen_func():
+	y = Yielder()
+	for c in chars:
+		y.spawn(f(c))
+	yield from b.yielding()
+
+print(list(gen_func())		
+# outputs an unordered version of ['b', 'd', 'c', 'e', 'f', 'g', a']
+```
+
+And if you want the return order to be the same as spawn order, `OrderedYielder`
+
+```py
+def gen_func():
+	y = OrderedYielder()
+	for c in chars:
+		y.spawn(f(c))
+	yield from b.yielding()
+
+print(list(gen_func())		
+# ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+```
+
 
 ## Testing
 
@@ -70,7 +87,7 @@ make test
 PYTHONPATH=. nosetests tests/
 ```
 
-## Rationale
+## More Examples
 
 The Group and Pool are quite useful in complex asynchronous situations. 
 

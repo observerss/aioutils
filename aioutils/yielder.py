@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """ Bag and OrderedBag """
+import heapq
 import asyncio
+import functools
 import collections
 
 
@@ -17,10 +19,9 @@ class Yielder(object):
 
     def __init__(self):
         self.loop = asyncio.get_event_loop()
-        self.q = collections.deque()
-        self.t = None
         self.counter = 0
-        self.waiters = collections.deque()
+        self.done = collections.deque()
+        self.getters = collections.deque()
 
     def spawn(self, coro):
         task = asyncio.async(coro)
@@ -36,46 +37,86 @@ class Yielder(object):
             self._put(result)
 
     def _put(self, item):
-        while self.waiters and self.waiters[0].done():
-            self.waiters.popleft()
+        if self.getters:
+            getter = self.getters.popleft()
+            getter.set_result(None)
 
-        self.q.append(item)
-        if self.waiters:
-            waiter = self.waiters.popleft()
-            waiter.set_result(None)
+        self.done.append(item)
 
     def _stop_loop(self, f):
         self.loop.stop()
 
+    def _safe_yield_from(self, waiter):
+        """ use a loop to ensure loop running when we need to yield """
+        while True:
+            try:
+                yield from waiter
+            except:
+                if not self.loop._running:
+                    self.loop.run_forever()
+            else:
+                break
+
+    def _yielding(self):
+        while self.counter > 0 or self.done:
+            if self.done:
+                yield self.done.popleft()
+            else:
+                getter = asyncio.Future()
+                self.getters.append(getter)
+                getter.add_done_callback(self._stop_loop)
+                yield from self._safe_yield_from(getter)
+
     def yielding(self):
-        while self.counter > 0:
-            waiter = asyncio.Future()
-            waiter.add_done_callback(self._stop_loop)
-            self.waiters.append(waiter)
-            if not self.loop._running:
-                self.loop.run_forever()
-            yield from waiter
-            while self.q:
-                yield self.q.popleft()
+        for x in self._yielding():
+            if isinstance(x, asyncio.Future):
+                continue
+            yield x
 
 
+class OrderedYielder(Yielder):
+    def __init__(self):
+        super(OrderedYielder, self).__init__()
+        self.done = []
+        self.order = 0
+        self.yield_counter = 0
 
-if __name__ == '__main__':
-    y = Yielder()
-    import random
-    @asyncio.coroutine
-    def f1(i):
-        yield from asyncio.sleep(random.random()*0.1)
-        for j in [random.randint(0, 10) for _ in range(i)]:
-            y.spawn(f2(j))
+    def spawn(self, coro):
+        self.order += 1
+        task = asyncio.async(coro)
+        task.add_done_callback(
+            functools.partial(self._on_completion, order=self.order))
+        self.counter += 1
+        return task
 
-    @asyncio.coroutine
-    def f2(j):
-        yield from asyncio.sleep(random.random()*0.1)
-        return j + random.random()
+    def _on_completion(self, f, order):
+        self.counter -= 1
+        f.remove_done_callback(self._on_completion)
+        result = f.result()
+        if result is not None:
+            self._put((order, result))
 
-    for i in range(10):
-        y.spawn(f1(i))
+    def _put(self, item, heappush=heapq.heappush):
+        order, item = item
+        if self.yield_counter + 1 == order or self.counter <= 0:
+            if self.getters:
+                getter = self.getters.popleft()
+                getter.set_result(None)
 
-    for x in y.yielding():
-        print(x)
+        heappush(self.done, (order, item))
+
+    def _yielding(self, heappop=heapq.heappop):
+        self.yield_counter = 1
+        while self.counter > 0 or self.done:
+            if self.done:
+                order, item = self.done[0]
+                if self.yield_counter == order:
+                    _, item = heappop(self.done)
+                    yield item
+                    self.yield_counter += 1
+                    continue
+
+            getter = asyncio.Future()
+            self.getters.append(getter)
+            getter.add_done_callback(self._stop_loop)
+            yield from self._safe_yield_from(getter)

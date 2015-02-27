@@ -4,22 +4,23 @@ import time
 import random
 import asyncio
 import threading
-from aioutils import Group
+from aioutils import Group, Yielder
 
-def test_threading():
+@asyncio.coroutine
+def f(c):
+    yield from asyncio.sleep(random.random()*0.1)
+    return c
+
+
+def test_group_threading():
     """ Ensure that Pool and Group are thread-safe """
     loop = asyncio.get_event_loop()
     stopall = False
     def t():
         asyncio.set_event_loop(loop)
-        g = Group()
-
-        @asyncio.coroutine
-        def f(c):
-            yield from asyncio.sleep(random.random()*0.1)
-            return c
 
         while not stopall:
+            g = Group()
             for i in range(10):
                 g.spawn(f(i))
 
@@ -27,11 +28,85 @@ def test_threading():
 
             time.sleep(random.random()*0.1)
 
-    tasks = [threading.Thread(target=t) for _ in range(5)]
+    tasks = [threading.Thread(target=t) for _ in range(10)]
     for task in tasks: task.daemon = True
     for task in tasks: task.start()
     time.sleep(1.)
     stopall = True
+    for task in tasks: task.join()
+    assert asyncio.Task.all_tasks() == set(), asyncio.Task.all_tasks()
+
+
+def test_yielder_threading():
+    """ Ensure Yielder are thread safe """
+    stopall = False
+    loop = asyncio.get_event_loop()
+    chars = 'abcdefg'
+
+    def gen_func():
+        y = Yielder()
+
+        for c in chars:
+            y.spawn(f(c))
+
+        yield from y.yielding()
+
+    def t():
+        asyncio.set_event_loop(loop)
+        while not stopall:
+            chars2 = list(gen_func())
+            assert set(chars2) == set(chars)
+
+            time.sleep(random.random()*0.1)
+
+    tasks = [threading.Thread(target=t) for _ in range(10)]
+    for task in tasks: task.daemon = True
+    for task in tasks: task.start()
+    time.sleep(1.)
+    stopall = True
+    for task in tasks: task.join()
+    assert asyncio.Task.all_tasks() == set(), asyncio.Task.all_tasks()
+
+
+def test_mixed():
+    """ Ensure mixed usage are thread safe """
+    loop = asyncio.get_event_loop()
+    chars = 'abcdefg'
+    stopall = False
+
+    def f1():
+        y = Yielder()
+        for c in chars:
+            y.spawn(f(c))
+
+        return list(y.yielding())
+
+    def f2():
+        g = Group()
+        for c in chars:
+            g.spawn(f(c))
+
+        g.join()
+
+    def t():
+        asyncio.set_event_loop(loop)
+        while not stopall:
+            f = random.choice([f1, f2])
+            r = f()
+            if f == f1:
+                assert set(r) == set(chars)
+            time.sleep(random.random()*0.1)
+
+    tasks = [threading.Thread(target=t) for _ in range(10)]
+    for task in tasks: task.daemon = True
+    for task in tasks: task.start()
+    time.sleep(1.)
+    stopall = True
+    for task in tasks: task.join()
+    assert asyncio.Task.all_tasks() == set(), asyncio.Task.all_tasks()
+
 
 if __name__ == '__main__':
-    test_threading()
+    test_group_threading()
+    test_yielder_threading()
+    test_mixed()

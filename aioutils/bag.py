@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" Bag and OrderedBag """
+""" Bag and OrderedBag
+
+This is old implementation for yielding helper
+You should use Yielder and OrderedYielder instead
+"""
 import time
 import queue
 import inspect

@@ -1,6 +1,13 @@
 ## History
 
-### 2015.02.28
+### 2015.02.27
+
+0.3.0 release
+
+- add Yielder and OrderedYielder to replace Bag and OrderedBag
+- fix thread safe problem #2 in Yielder and Group mixed usage
+
+### 2015.02.26
 
 0.2.1 release
 
