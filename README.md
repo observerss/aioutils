@@ -4,10 +4,12 @@
 
 Python3 Asyncio implements an event loop, but 
 
-- it is in quite low level, it misses some advanced primitives
+- it is quite low level, it misses some advanced primitives
 - it can only write sync code wrapped in async code helper (`run_in_executer`), not the other way around
 
-If you try to use asyncio the basic way, you must write all your code in an async way, but that's a pain for many applications. I feel must better to write critical part in async mode while remain transparent to others sync codes.
+Specifically, to use asyncio, you must write all your code in an async way, write wrappers for all blocking code, and execute them all in a loop
+
+That's quite obfuscated for many applications. It is much easier to write critical part in async mode while remain transparent to others sync codes.
 
 To achieve this, here is package I wrote that provides the following primitives.
 
@@ -19,14 +21,14 @@ To achieve this, here is package I wrote that provides the following primitives.
 
 ## QuickStart
 
-Simple Group, You might find that there is no explicit event loops, it looks just like threading or gevent. 
+### Group
 
-Under the hood, a event loop is started and wait until all tasks in Group joins then stopped (to return sync value)
+Simple `Group` Usage.
 
 ```py
 import random
 import asyncio
-from aioutils import Pool, Group, Yielder, OrderedYielder
+from aioutils import Pool, Group, Yielder, OrderedYielder, yielding, ordered_yielding
 
 @asyncio.coroutine
 def f(c):
@@ -35,20 +37,35 @@ def f(c):
 
 chars = 'abcdefg'
 		
-# Group Usage
 g = Group()
 for c in chars:
 	g.spawn(f(c))
 g.join()
+```
 
-# Pool Usage
+You might find that there is no explicit event loop, it looks just like threading or gevent. 
+
+Under the hood, an event loop starts and runs until all tasks in group joins, 
+then the event loop stops, allows synced calls from outside.
+
+The event pool may start later again by other method or in orther thread, it is completely thread safe.
+
+### Pool
+
+Sometimes, you want to limit the maximum level of concurrency, you can use `Pool` instead.
+
+```py
 p = Pool(2)
 for c in chars:
 	p.spawn(f(c))
 p.join()
 ```
 
-And if you need the return values, use `Yielder`
+The only differences between `Pool` and `Group` is that a `Pool` initializes with a integer as the limiting concurrency.
+
+### Yielder
+
+If the return value of the spawned coroutines matters to you, use `Yielder`
 
 ```py
 def gen_func():
@@ -58,8 +75,29 @@ def gen_func():
 	yield from b.yielding()
 
 print(list(gen_func())		
-# outputs an unordered version of ['b', 'd', 'c', 'e', 'f', 'g', a']
+# outputs an unordered version of ['b', 'd', 'c', 'e', 'f', 'g', 'a']
 ```
+
+Note that **`Yielder` only captures results that returns something**, i.e. if you spawn a coroutine that doesn't return anything, or returns `None`, `Yielder` will not yield that value.
+
+Under the hood, `Yielder` runs an event loop until the first non-None-return corotuine completed, then stops the loop and yield. This process is repeated until all spawned coroutines are done.
+
+You can also use a context manager `yielding`
+
+```py
+def gen_func2():
+	with yielding() as y:
+		for c in chars:
+			y.spawn(f(c))
+			
+print(list(gen_func2())
+# outputs an unordered version of ['b', 'd', 'c', 'e', 'f', 'g', 'a']
+```
+
+The `Yielder` and `yielding` are both thread safe.
+
+
+### OrderedYielder
 
 And if you want the return order to be the same as spawn order, `OrderedYielder`
 
@@ -73,6 +111,8 @@ def gen_func():
 print(list(gen_func())		
 # ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 ```
+
+And also there is `ordered_yielding` works just like `yielding`
 
 
 ## Testing

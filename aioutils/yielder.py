@@ -120,3 +120,31 @@ class OrderedYielder(Yielder):
             self.getters.append(getter)
             getter.add_done_callback(self._stop_loop)
             yield from self._safe_yield_from(getter)
+
+
+class YieldingContext(object):
+    def __init__(self, ordered=False):
+        if ordered:
+            self.y = OrderedYielder()
+        else:
+            self.y = Yielder()
+        self.yielding = None
+
+    def spawn(self, coro):
+        return self.y.spawn(coro)
+
+    def __enter__(self):
+        return iter(self)
+
+    def __iter__(self):
+        self.yielding = self.y.yielding()
+        return self
+
+    def __next__(self):
+        return next(self.yielding)
+
+    def __exit__(self, *args):
+        pass
+
+yielding = YieldingContext
+ordered_yielding = functools.partial(YieldingContext, ordered=True)

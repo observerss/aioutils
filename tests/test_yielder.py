@@ -4,7 +4,7 @@ import time
 import random
 import inspect
 import asyncio
-from aioutils import Yielder, OrderedYielder
+from aioutils import Yielder, OrderedYielder, yielding
 
 def test_yielder():
     def gen_func():
@@ -57,6 +57,29 @@ def test_ordered_yielder():
     assert time.time() - t0 < 0.1 * 1.1
 
 
+def test_yielding():
+    chars = 'abcdefg'
+
+    @asyncio.coroutine
+    def f(c):
+        yield from asyncio.sleep(random.random()*0.1)
+        return c
+
+    def gen_func():
+        with yielding() as y:
+            for c in chars:
+                y.spawn(f(c))
+            yield from y
+
+    g = gen_func()
+    assert inspect.isgenerator(g)
+    t0 = time.time()
+    gs = list(g)
+    assert set(gs) == set(chars)
+    assert time.time() - t0 < 0.1 * 1.1
+
+
 if __name__ == '__main__':
     test_yielder()
     test_ordered_yielder()
+    test_yielding()

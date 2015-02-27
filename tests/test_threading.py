@@ -8,7 +8,7 @@ from aioutils import Group, Yielder
 
 @asyncio.coroutine
 def f(c):
-    yield from asyncio.sleep(random.random()*0.1)
+    yield from asyncio.sleep(random.random()*0.02)
     return c
 
 
@@ -21,17 +21,17 @@ def test_group_threading():
 
         while not stopall:
             g = Group()
-            for i in range(10):
+            for i in range(5):
                 g.spawn(f(i))
 
             g.join()
 
-            time.sleep(random.random()*0.1)
+            time.sleep(random.random()*0.02)
 
-    tasks = [threading.Thread(target=t) for _ in range(10)]
+    tasks = [threading.Thread(target=t) for _ in range(5)]
     for task in tasks: task.daemon = True
     for task in tasks: task.start()
-    time.sleep(1.)
+    time.sleep(0.2)
     stopall = True
     for task in tasks: task.join()
     assert asyncio.Task.all_tasks() == set(), asyncio.Task.all_tasks()
@@ -57,12 +57,12 @@ def test_yielder_threading():
             chars2 = list(gen_func())
             assert set(chars2) == set(chars)
 
-            time.sleep(random.random()*0.1)
+            time.sleep(random.random()*0.02)
 
-    tasks = [threading.Thread(target=t) for _ in range(10)]
+    tasks = [threading.Thread(target=t) for _ in range(5)]
     for task in tasks: task.daemon = True
     for task in tasks: task.start()
-    time.sleep(1.)
+    time.sleep(0.2)
     stopall = True
     for task in tasks: task.join()
     assert asyncio.Task.all_tasks() == set(), asyncio.Task.all_tasks()
@@ -95,12 +95,12 @@ def test_mixed():
             r = f()
             if f == f1:
                 assert set(r) == set(chars)
-            time.sleep(random.random()*0.1)
+            time.sleep(random.random()*0.02)
 
-    tasks = [threading.Thread(target=t) for _ in range(10)]
+    tasks = [threading.Thread(target=t) for _ in range(5)]
     for task in tasks: task.daemon = True
     for task in tasks: task.start()
-    time.sleep(1.)
+    time.sleep(0.2)
     stopall = True
     for task in tasks: task.join()
     assert asyncio.Task.all_tasks() == set(), asyncio.Task.all_tasks()
