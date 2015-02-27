@@ -99,7 +99,7 @@ print(list(gen_func2())
 
 The `Yielder` and `yielding` are both thread safe.
 
-### sequential "yield from"s
+### Sequential "yield from"s
 
 When using `yielding`, you'd better avoid using sequential "yield from"s when possible, the problem code is as follows
 
