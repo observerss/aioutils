@@ -111,9 +111,9 @@ def f()
     y.put(t1 + t2)
 ```
 
-This code alone is ok, but if you use it in a loop, spawning thousands of async tasks of "f", then the event loop need to wait for all f1s complete before it can schedules f2. Thus the yielding processing won't yield anything, it will block until all "f1"s done and some "f2"s done too.
+This code alone is ok, but if you use it in a loop, spawning thousands of async tasks of "f", then the event loop need to wait for all f1s complete before it can schedule f2. Thus the yielding processing won't yield anything, it will block until all "f1"s done and some "f2"s done too.
 
-If there're no dependecies between "f1" and "f2", the following modification runs just fine
+If there're no dependecies between "f1" and "f2", the following modification works just fine
 
 ```py
 @asyncio.coroutine
@@ -164,7 +164,7 @@ PYTHONPATH=. nosetests tests/
 
 ## More Examples
 
-The Group and Pool are quite useful in complex asynchronous situations. 
+The Group is quite useful in complex asynchronous situations. 
 
 Compare these codes below
 
