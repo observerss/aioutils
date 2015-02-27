@@ -2,6 +2,10 @@
 
 ### 2015.02.27
 
+0.3.1 release
+
+- add put method for manually yield items
+
 0.3.0 release
 
 - add Yielder and OrderedYielder to replace Bag and OrderedBag

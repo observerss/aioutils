@@ -80,6 +80,8 @@ print(list(gen_func())
 
 Note that **`Yielder` only captures results that returns something**, i.e. if you spawn a coroutine that doesn't return anything, or returns `None`, `Yielder` will not yield that value.
 
+You can also use `y.put` method to explicitly declare what items to be yielded.
+
 Under the hood, `Yielder` runs an event loop until the first non-None-return corotuine completed, then stops the loop and yield. This process is repeated until all spawned coroutines are done.
 
 You can also use a context manager `yielding`

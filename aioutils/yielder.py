@@ -36,6 +36,9 @@ class Yielder(object):
         if result is not None:
             self._put(result)
 
+    def put(self, item):
+        self._put(item)
+
     def _put(self, item):
         if self.getters:
             getter = self.getters.popleft()
@@ -104,6 +107,10 @@ class OrderedYielder(Yielder):
                 getter.set_result(None)
 
         heappush(self.done, (order, item))
+
+    def put(self, item):
+        self.order += 1
+        self._put((self.order, item))
 
     def _yielding(self, heappop=heapq.heappop):
         self.yield_counter = 1

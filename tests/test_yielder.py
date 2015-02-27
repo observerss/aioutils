@@ -4,7 +4,7 @@ import time
 import random
 import inspect
 import asyncio
-from aioutils import Yielder, OrderedYielder, yielding
+from aioutils import Yielder, OrderedYielder, yielding, ordered_yielding
 
 def test_yielder():
     def gen_func():
@@ -20,7 +20,12 @@ def test_yielder():
             yield from asyncio.sleep(random.random()*0.1)
             return j + random.random()
 
-        for i in range(10):
+        for i in range(5):
+            y.spawn(f1(i))
+
+        y.put(3)
+
+        for i in range(5, 10):
             y.spawn(f1(i))
 
         yield from y.yielding()
@@ -29,7 +34,7 @@ def test_yielder():
     assert inspect.isgenerator(g)
     t0 = time.time()
     gs = list(g)
-    assert len(gs) == 45
+    assert len(gs) == 46
     assert min(gs) > 0 and max(gs) < 11
     assert time.time() - t0 < 0.2 * 1.1
 
@@ -44,7 +49,12 @@ def test_ordered_yielder():
             yield from asyncio.sleep(random.random()*0.1)
             return c
 
-        for c in chars:
+        for c in chars[:3]:
+            y.spawn(f(c))
+
+        y.put('z')
+
+        for c in chars[3:]:
             y.spawn(f(c))
 
         yield from y.yielding()
@@ -53,7 +63,7 @@ def test_ordered_yielder():
     assert inspect.isgenerator(g)
     t0 = time.time()
     gs = list(g)
-    assert ''.join(gs) == chars
+    assert ''.join(gs) == chars[:3] + 'z' + chars[3:]
     assert time.time() - t0 < 0.1 * 1.1
 
 
@@ -71,12 +81,20 @@ def test_yielding():
                 y.spawn(f(c))
             yield from y
 
+    def gen_func2():
+        with ordered_yielding() as y:
+            for c in chars:
+                y.spawn(f(c))
+            yield from y
+
     g = gen_func()
     assert inspect.isgenerator(g)
     t0 = time.time()
     gs = list(g)
     assert set(gs) == set(chars)
     assert time.time() - t0 < 0.1 * 1.1
+
+    assert ''.join(list(gen_func2())) == chars
 
 
 if __name__ == '__main__':
