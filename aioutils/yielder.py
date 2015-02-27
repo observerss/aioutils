@@ -140,6 +140,9 @@ class YieldingContext(object):
     def spawn(self, coro):
         return self.y.spawn(coro)
 
+    def put(self, item):
+        return self.y.put(item)
+
     def __enter__(self):
         return iter(self)
 
