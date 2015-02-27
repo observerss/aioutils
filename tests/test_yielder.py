@@ -102,9 +102,18 @@ def test_yielder_with_pool_size():
     # I don't know how to assert correctness, >.<
     assert set(gen_func())  == set(chars)
 
+def test_empty_yielder():
+    def gen_func():
+        with yielding() as y:
+            y.spawn(asyncio.sleep(0.01))
+            yield from y
+
+    assert list(gen_func()) == []
+
 
 if __name__ == '__main__':
     test_yielder()
     test_ordered_yielder()
     test_yielding()
     test_yielder_with_pool_size()
+    test_empty_yielder()

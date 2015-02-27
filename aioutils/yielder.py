@@ -47,6 +47,9 @@ class Yielder(object):
         result = f.result()
         if result is not None:
             self._put(result)
+        if self.counter <= 0 and self.getters:
+            getter = self.getters.popleft()
+            getter.set_result(None)
 
     def put(self, item):
         self._put(item)

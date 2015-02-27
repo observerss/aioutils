@@ -5,6 +5,7 @@
 0.3.3 release
 
 - fixed Pool's potential thread unsafe problem
+- fixed Yielder hangs when no items to yield
 - add pool size argument to yielder family
 
 ### 2015.02.27
