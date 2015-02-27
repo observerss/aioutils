@@ -72,7 +72,7 @@ def gen_func():
 	y = Yielder()
 	for c in chars:
 		y.spawn(f(c))
-	yield from b.yielding()
+	yield from y.yielding()
 
 print(list(gen_func())		
 # outputs an unordered version of ['b', 'd', 'c', 'e', 'f', 'g', 'a']
@@ -89,6 +89,7 @@ def gen_func2():
 	with yielding() as y:
 		for c in chars:
 			y.spawn(f(c))
+		yield from y
 			
 print(list(gen_func2())
 # outputs an unordered version of ['b', 'd', 'c', 'e', 'f', 'g', 'a']
@@ -106,13 +107,17 @@ def gen_func():
 	y = OrderedYielder()
 	for c in chars:
 		y.spawn(f(c))
-	yield from b.yielding()
+	yield from y.yielding()
 
 print(list(gen_func())		
 # ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 ```
 
 And also there is `ordered_yielding` works just like `yielding`
+
+### Examples
+
+see [test cases](tests) for example usages.
 
 
 ## Testing
@@ -137,7 +142,7 @@ Compare these codes below
 
 Even in simplest case, Group can make the below code cleaner
 
-#### asyncio version
+#### 1. using `asyncio`
 
 ```py
 @asyncio.coroutine
@@ -148,14 +153,10 @@ tasks = [asyncio.async(f1()) for _ in range(10)]
 asyncio.get_event_loop().run_until_complete(asyncio.wait(tasks))
 ```
 
-#### with `aoipool.Group`
+#### 2. using `Group`
 
 ```py
-from aiopool import Group
-
-@asyncio.coroutine
-def f1():
-    yield from asyncio.sleep(1.0)
+from aioutils import Group
 
 g = Group()
 for _ in range(10):
@@ -167,7 +168,7 @@ g.join()
 
 When you have multiple levels of loops, each depends on some blocking data, your situation is worse in raw asyncio
 
-#### a sync example
+#### 1. a sync example
  
 ```py
 def f1():
@@ -193,7 +194,7 @@ But the optimal time for this problem is only 0.2 seconds, that is
 
 Let's try to write them in aysncio.
 
-#### aysncio version
+#### 2. using `aysncio`
 
 
 ##### make f1 and f2 coroutine
@@ -254,7 +255,7 @@ We must keep two levels of tasks, otherwise `asyncio.wait` will panic when you t
 
 This implementation is not only ugly, and also hard to manage, what if you have 3, 4, or unknown level of tasks?
 
-#### `aiopool.Group` version
+#### 3. using `Group`
 
 ```py
 g = Group()
@@ -271,23 +272,5 @@ g.join()
 ```
 
 Which is (I think) easier to understand and use.
-
-#### `aoi.pool.Pool`, set max concurrency levels
-
-```py
-p = Pool(10)
-
-@asyncio.coroutine
-def inner_task(v1):
-	for _ in range(10)
-		p.spawn(f2(v1))
-		
-for _ in range(10):
-	p.spawn(inner_task(v1))
-	
-p.join()
-```
-
-Looks same like `Group`, but ensures that no more than 10 tasks in the same `Pool` can be executed simultaneously.
 
 
