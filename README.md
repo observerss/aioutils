@@ -99,10 +99,36 @@ print(list(gen_func2())
 
 The `Yielder` and `yielding` are both thread safe.
 
+When using `yielding`, you'd better avoid using sequential "yield from"s when possible, the problem code is as follows
+
+```py
+@asyncio.coroutine
+def f()
+    t1 = yield from f1()
+    t2 = yield from f2()
+    y.put(t1 + t2)
+```
+
+This code alone is ok, but if you use it in a loop, spawning thousands of async tasks of "f", then the event loop need to wait for all f1s complete before it can schedules f2. Thus the yielding processing won't yield anything, it will block until all "f1"s done and some "f2"s done too.
+
+If there're no dependecies between "f1" and "f2", the following modification runs just fine
+
+```py
+@asyncio.coroutine
+def f()
+    t1 = asyncio.async(f1())
+    t2 = asyncio.async(f2())
+    yield from asyncio.wait([t1, t2])
+    y.put(t1.result() + t2.result())
+```
+
+If f2's argument depends on f1's result, you'd better do "yield from f2()" directly inside f1.
+
+This coding preference holds true for raw asyncio, too.
 
 ### OrderedYielder
 
-And if you want the return order to be the same as spawn order, `OrderedYielder`
+If you want the return order to be the same as spawn order, `OrderedYielder`
 
 ```py
 def gen_func():
