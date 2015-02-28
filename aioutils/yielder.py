@@ -112,8 +112,7 @@ class OrderedYielder(Yielder):
         self.counter -= 1
         f.remove_done_callback(self._on_completion)
         result = f.result()
-        if result is not None:
-            self._put((order, result))
+        self._put((order, result))
 
     def _put(self, item, heappush=heapq.heappush):
         order, item = item
@@ -135,7 +134,8 @@ class OrderedYielder(Yielder):
                 order, item = self.done[0]
                 if self.yield_counter == order:
                     _, item = heappop(self.done)
-                    yield item
+                    if item is not None:
+                        yield item
                     self.yield_counter += 1
                     continue
 

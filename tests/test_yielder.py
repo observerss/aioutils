@@ -111,9 +111,27 @@ def test_empty_yielder():
     assert list(gen_func()) == []
 
 
+def test_two_level_ordered_yielding():
+    chars = 'abcdefg'
+    def gen_func():
+        with ordered_yielding() as y:
+            @asyncio.coroutine
+            def g(i):
+                for c in chars[:i]:
+                    y.spawn(f(c))
+
+            for i in range(3, 5):
+                y.spawn(g(i))
+
+            yield from y
+
+    assert ''.join(list(gen_func())) == 'abcabcd'
+
+
 if __name__ == '__main__':
     test_yielder()
     test_ordered_yielder()
     test_yielding()
     test_yielder_with_pool_size()
     test_empty_yielder()
+    test_two_level_ordered_yielding()
