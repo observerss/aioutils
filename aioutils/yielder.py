@@ -34,8 +34,8 @@ class Yielder(object):
         if self.sem:
             @asyncio.coroutine
             def _limit_coro():
-                with (yield from self._safe_yield_from(self.sem)):
-                    return (yield from self._safe_yield_from(coro))
+                with (yield from self.sem):
+                    return (yield from coro)
             task = asyncio.async(_limit_coro())
         else:
             task = asyncio.async(coro)
