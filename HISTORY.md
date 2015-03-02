@@ -2,6 +2,11 @@
 
 ### 2015.03.02
 
+0.3.5 release
+
+- fix semaphore order so that loop must exist
+- add test to test this behaviour
+
 0.3.4 release
 
 - create new event loop if using in a thread

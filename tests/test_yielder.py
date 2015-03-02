@@ -99,6 +99,7 @@ def test_yielder_with_pool_size():
                 y.spawn(f(c))
             yield from y
 
+
     # I don't know how to assert correctness, >.<
     assert set(gen_func())  == set(chars)
 

@@ -4,7 +4,7 @@ import time
 import random
 import asyncio
 import threading
-from aioutils import Group, Yielder
+from aioutils import Group, Yielder, yielding
 
 @asyncio.coroutine
 def f(c):
@@ -99,7 +99,28 @@ def test_mixed():
     assert asyncio.Task.all_tasks() == set(), asyncio.Task.all_tasks()
 
 
+def test_yielding_size_in_threading():
+    chars = 'abcdefgh'
+    def f1():
+        with yielding(2) as y:
+            for c in chars:
+                y.spawn(f(c))
+
+            yield from y
+
+    l = []
+    def f2():
+        for x in f1():
+            l.append(x)
+
+    t = threading.Thread(target=f2)
+    t.start()
+    t.join()
+    assert set(l) == set(chars)
+
+
 if __name__ == '__main__':
     test_group_threading()
     test_yielder_threading()
     test_mixed()
+    test_yielding_size_in_threading()
