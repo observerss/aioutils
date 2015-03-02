@@ -27,7 +27,14 @@ import asyncio
 class Group(object):
 
     def __init__(self, loop=None):
-        self.loop = loop or asyncio.get_event_loop()
+        try:
+            self.loop = loop or asyncio.get_event_loop()
+            if self.loop._running:
+                raise NotImplementedError("Cannot use aioutils in "
+                                          "asynchroneous environment")
+        except:
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
         self._prepare()
 
     def _prepare(self):

@@ -48,7 +48,14 @@ class Bag(object):
             self.g = group
             self.loop = self.g.loop
         else:
-            self.loop = asyncio.get_event_loop()
+            try:
+                self.loop = asyncio.get_event_loop()
+                if self.loop._running:
+                    raise NotImplementedError("Cannot use aioutils in "
+                                            "asynchroneous environment")
+            except:
+                self.loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self.loop)
             self.g = Group(loop=self.loop)
         self.q = queue.Queue()
         self.t = None

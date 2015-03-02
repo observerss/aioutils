@@ -1,5 +1,11 @@
 ## History
 
+### 2015.03.02
+
+0.3.4 release
+
+- create new event loop if using in a thread
+
 ### 2015.02.28
 
 0.3.3 release

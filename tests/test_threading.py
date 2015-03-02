@@ -14,11 +14,8 @@ def f(c):
 
 def test_group_threading():
     """ Ensure that Pool and Group are thread-safe """
-    loop = asyncio.get_event_loop()
     stopall = False
     def t():
-        asyncio.set_event_loop(loop)
-
         while not stopall:
             g = Group()
             for i in range(5):
@@ -40,7 +37,6 @@ def test_group_threading():
 def test_yielder_threading():
     """ Ensure Yielder are thread safe """
     stopall = False
-    loop = asyncio.get_event_loop()
     chars = 'abcdefg'
 
     def gen_func():
@@ -52,7 +48,6 @@ def test_yielder_threading():
         yield from y.yielding()
 
     def t():
-        asyncio.set_event_loop(loop)
         while not stopall:
             chars2 = list(gen_func())
             assert set(chars2) == set(chars)
@@ -70,7 +65,6 @@ def test_yielder_threading():
 
 def test_mixed():
     """ Ensure mixed usage are thread safe """
-    loop = asyncio.get_event_loop()
     chars = 'abcdefg'
     stopall = False
 
@@ -89,7 +83,6 @@ def test_mixed():
         g.join()
 
     def t():
-        asyncio.set_event_loop(loop)
         while not stopall:
             f = random.choice([f1, f2])
             r = f()
