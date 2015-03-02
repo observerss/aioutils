@@ -20,7 +20,7 @@ class Yielder(object):
     def __init__(self, pool_size=None):
         try:
             self.loop = asyncio.get_event_loop()
-            if self.loop._running:
+            if self.loop.is_running():
                 raise NotImplementedError("Cannot use aioutils in "
                                           "asynchroneous environment")
         except:
@@ -79,7 +79,7 @@ class Yielder(object):
                 getter = asyncio.Future()
                 self.getters.append(getter)
                 getter.add_done_callback(self._stop_loop)
-                if not self.loop._running:
+                if not self.loop.is_running():
                     self.loop.run_forever()
 
     def yielding(self):
@@ -138,7 +138,7 @@ class OrderedYielder(Yielder):
             getter = asyncio.Future()
             self.getters.append(getter)
             getter.add_done_callback(self._stop_loop)
-            if not self.loop._running:
+            if not self.loop.is_running():
                 self.loop.run_forever()
 
         self.done = []

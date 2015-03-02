@@ -50,7 +50,7 @@ class Bag(object):
         else:
             try:
                 self.loop = asyncio.get_event_loop()
-                if self.loop._running:
+                if self.loop.is_running():
                     raise NotImplementedError("Cannot use aioutils in "
                                             "asynchroneous environment")
             except:

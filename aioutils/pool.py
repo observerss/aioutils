@@ -29,7 +29,7 @@ class Group(object):
     def __init__(self, loop=None):
         try:
             self.loop = loop or asyncio.get_event_loop()
-            if self.loop._running:
+            if self.loop.is_running():
                 raise NotImplementedError("Cannot use aioutils in "
                                           "asynchroneous environment")
         except:
@@ -65,7 +65,7 @@ class Group(object):
 
         # expect the loops to be stop and start multiple times
         while self.counter > 0:
-            if not self.loop._running:
+            if not self.loop.is_running():
                 self.loop.run_forever()
 
 
