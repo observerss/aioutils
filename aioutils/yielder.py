@@ -71,18 +71,6 @@ class Yielder(object):
     def _stop_loop(self, f):
         self.loop.stop()
 
-    def _safe_yield_from(self, waiter):
-        """ use a loop to ensure loop running when we need to yield """
-        while True:
-            try:
-                x = yield from waiter
-            except:
-                if not self.loop._running:
-                    self.loop.run_forever()
-            else:
-                break
-        return x
-
     def _yielding(self):
         while self.counter > 0 or self.done:
             if self.done:
@@ -91,7 +79,8 @@ class Yielder(object):
                 getter = asyncio.Future()
                 self.getters.append(getter)
                 getter.add_done_callback(self._stop_loop)
-                yield from self._safe_yield_from(getter)
+                if not self.loop._running:
+                    self.loop.run_forever()
 
     def yielding(self):
         for x in self._yielding():
@@ -149,7 +138,12 @@ class OrderedYielder(Yielder):
             getter = asyncio.Future()
             self.getters.append(getter)
             getter.add_done_callback(self._stop_loop)
-            yield from self._safe_yield_from(getter)
+            if not self.loop._running:
+                self.loop.run_forever()
+
+        self.done = []
+        self.order = 0
+        self.yield_counter = 0
 
 
 class YieldingContext(object):

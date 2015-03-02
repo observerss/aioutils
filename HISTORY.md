@@ -2,14 +2,12 @@
 
 ### 2015.03.02
 
-0.3.5 release
-
-- fix semaphore order so that loop must exist
-- add test to test this behaviour
-
-0.3.4 release
+0.3.4-0.3.6 release
 
 - create new event loop if using in a thread
+- fix semaphore order so that loop must exist
+- add test to test this behaviour
+- cleanup _safe_yield_from that are not needed anymore
 
 ### 2015.02.28
 
