@@ -18,7 +18,6 @@ class Yielder(object):
     """
 
     def __init__(self, pool_size=None):
-        self.sem = asyncio.Semaphore(pool_size) if pool_size else None
         try:
             self.loop = asyncio.get_event_loop()
             if self.loop._running:
@@ -27,6 +26,7 @@ class Yielder(object):
         except:
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
+        self.sem = asyncio.Semaphore(pool_size) if pool_size else None
         self.counter = 0
         self.done = collections.deque()
         self.getters = collections.deque()
