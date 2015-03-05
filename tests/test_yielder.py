@@ -11,6 +11,7 @@ def f(c):
     yield from asyncio.sleep(random.random()*.1)
     return c
 
+
 def test_yielder():
     def gen_func():
         y = Yielder()
@@ -103,6 +104,7 @@ def test_yielder_with_pool_size():
     # I don't know how to assert correctness, >.<
     assert set(gen_func())  == set(chars)
 
+
 def test_empty_yielder():
     def gen_func():
         with yielding() as y:
@@ -129,6 +131,24 @@ def test_two_level_ordered_yielding():
     assert ''.join(list(gen_func())) == 'abcabcd'
 
 
+def test_break_from_yielding():
+    @asyncio.coroutine
+    def g(c):
+        yield from asyncio.sleep(random.random()*.1)
+        return c
+    y = Yielder()
+
+    def gen_func():
+        for c in 'abcdefg':
+            y.spawn(g(c))
+        yield from y.yielding()
+
+    for x in gen_func():
+        break
+
+    assert y.counter == 0
+
+
 if __name__ == '__main__':
     test_yielder()
     test_ordered_yielder()
@@ -136,3 +156,4 @@ if __name__ == '__main__':
     test_yielder_with_pool_size()
     test_empty_yielder()
     test_two_level_ordered_yielding()
+    test_break_from_yielding()

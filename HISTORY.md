@@ -1,5 +1,12 @@
 ## History
 
+### 2015.03.05
+
+0.3.8 release
+
+- when GeneratorExit cancel all pending tasks
+- yielder related status cleanups
+
 ### 2015.03.02
 
 0.3.4-0.3.7 release

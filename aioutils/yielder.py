@@ -27,14 +27,19 @@ class Yielder(object):
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
         self.sem = asyncio.Semaphore(pool_size) if pool_size else None
+        self._prepare()
+
+    def _prepare(self):
         self.counter = 0
         self.done = collections.deque()
         self.getters = collections.deque()
+        self.tasks = []
 
     def spawn(self, coro):
         task = self._async_task(coro)
         task.add_done_callback(self._on_completion)
         self.counter += 1
+        self.tasks.append(task)
         return task
 
     def _async_task(self, coro):
@@ -83,15 +88,27 @@ class Yielder(object):
                     self.loop.run_forever()
 
     def yielding(self):
-        for x in self._yielding():
-            if isinstance(x, asyncio.Future):
-                continue
-            yield x
+        try:
+            for x in self._yielding():
+                if isinstance(x, asyncio.Future):
+                    continue
+                yield x
+        except GeneratorExit:
+            for task in self.tasks:
+                if not task.done():
+                    task.cancel()
+                    self.counter -= 1
+
+        self._prepare()
 
 
 class OrderedYielder(Yielder):
     def __init__(self, pool_size=None):
         super(OrderedYielder, self).__init__(pool_size)
+        self._prepare()
+
+    def _prepare(self):
+        super(OrderedYielder, self)._prepare()
         self.done = []
         self.order = 0
         self.yield_counter = 0
@@ -102,6 +119,7 @@ class OrderedYielder(Yielder):
         task.add_done_callback(
             functools.partial(self._on_completion, order=self.order))
         self.counter += 1
+        self.tasks.append(task)
         return task
 
     def _on_completion(self, f, order):
@@ -140,10 +158,6 @@ class OrderedYielder(Yielder):
             getter.add_done_callback(self._stop_loop)
             if not self.loop.is_running():
                 self.loop.run_forever()
-
-        self.done = []
-        self.order = 0
-        self.yield_counter = 0
 
 
 class YieldingContext(object):
