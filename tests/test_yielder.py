@@ -149,6 +149,25 @@ def test_break_from_yielding():
     assert y.counter == 0
 
 
+def test_raise_from_yielding():
+    @asyncio.coroutine
+    def g(c):
+        yield from asyncio.sleep(random.random()*.1)
+        if random.random() < 0.2:
+            raise ValueError("dummy error")
+        return c
+
+    def gen_func():
+        with yielding(3) as y:
+            for c in 'abcdefghijklmn':
+                y.spawn(g(c))
+            yield from y
+
+    # test that raise will not cause problem
+    for x in gen_func():
+        pass
+
+
 if __name__ == '__main__':
     test_yielder()
     test_ordered_yielder()
@@ -157,3 +176,4 @@ if __name__ == '__main__':
     test_empty_yielder()
     test_two_level_ordered_yielding()
     test_break_from_yielding()
+    test_raise_from_yielding()
