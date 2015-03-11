@@ -33,6 +33,7 @@ class Yielder(object):
         self.counter = 0
         self.done = collections.deque()
         self.getters = collections.deque()
+        self.exceptions = []
         self.tasks = []
 
     def spawn(self, coro):
@@ -56,7 +57,11 @@ class Yielder(object):
     def _on_completion(self, f):
         self.counter -= 1
         f.remove_done_callback(self._on_completion)
-        result = f.result()
+        try:
+            result = f.result()
+        except Exception as e:
+            self.exceptions.append(e)
+            result = None
         if result is not None:
             self._put(result)
         if self.counter <= 0 and self.getters:
@@ -99,6 +104,8 @@ class Yielder(object):
                     task.cancel()
                     self.counter -= 1
 
+        if self.exceptions:
+            raise self.exceptions[0]
         self._prepare()
 
 
@@ -125,7 +132,11 @@ class OrderedYielder(Yielder):
     def _on_completion(self, f, order):
         self.counter -= 1
         f.remove_done_callback(self._on_completion)
-        result = f.result()
+        try:
+            result = f.result()
+        except Exception as e:
+            self.exceptions.append(e)
+            result = None
         self._put((order, result))
 
     def _put(self, item, heappush=heapq.heappush):

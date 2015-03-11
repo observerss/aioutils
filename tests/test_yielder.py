@@ -6,6 +6,8 @@ import inspect
 import asyncio
 from aioutils import Yielder, OrderedYielder, yielding, ordered_yielding
 
+from nose.tools import raises
+
 @asyncio.coroutine
 def f(c):
     yield from asyncio.sleep(random.random()*.1)
@@ -149,12 +151,13 @@ def test_break_from_yielding():
     assert y.counter == 0
 
 
+@raises(ValueError)
 def test_raise_from_yielding():
     @asyncio.coroutine
     def g(c):
         yield from asyncio.sleep(random.random()*.1)
         if random.random() < 0.2:
-            raise ValueError("dummy error")
+            raise ValueError
         return c
 
     def gen_func():
@@ -168,6 +171,25 @@ def test_raise_from_yielding():
         pass
 
 
+@raises(ValueError)
+def test_raise_from_nested_yielding():
+    yielder = Yielder()
+
+    @asyncio.coroutine
+    def worker(err_count=0):
+        yield from asyncio.sleep(random.random()*.02)
+        if err_count > 5:
+            raise ValueError
+        else:
+            return (yield from worker(err_count+1))
+
+    for i in range(10):
+        yielder.spawn(worker())
+
+    for i, ch in enumerate(yielder.yielding()):
+        pass
+
+
 if __name__ == '__main__':
     test_yielder()
     test_ordered_yielder()
@@ -177,3 +199,4 @@ if __name__ == '__main__':
     test_two_level_ordered_yielding()
     test_break_from_yielding()
     test_raise_from_yielding()
+    test_raise_from_nested_yielding()
