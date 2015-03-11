@@ -1,5 +1,11 @@
 ## History
 
+### 2015.03.11
+
+0.3.9 release
+
+- fix a bug will cause yielder stuck
+
 ### 2015.03.05
 
 0.3.8 release
