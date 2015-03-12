@@ -60,7 +60,8 @@ class Yielder(object):
         try:
             result = f.result()
         except Exception as e:
-            self.exceptions.append(e)
+            if not isinstance(e, asyncio.InvalidStateError):
+                self.exceptions.append(e)
             result = None
         if result is not None:
             self._put(result)
@@ -135,7 +136,8 @@ class OrderedYielder(Yielder):
         try:
             result = f.result()
         except Exception as e:
-            self.exceptions.append(e)
+            if not isinstance(e, asyncio.InvalidStateError):
+                self.exceptions.append(e)
             result = None
         self._put((order, result))
 

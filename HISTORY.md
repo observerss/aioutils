@@ -1,5 +1,11 @@
 ## History
 
+### 2015.03.12
+
+0.3.10 release
+
+- do not raise asyncio.InvalidStateError
+
 ### 2015.03.11
 
 0.3.9 release
